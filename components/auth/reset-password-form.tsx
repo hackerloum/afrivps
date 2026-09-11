@@ -15,18 +15,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { completePasswordReset } from "@/lib/firebase/auth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { completePasswordReset, verifyResetCode } from "@/lib/firebase/auth";
 import { authErrorMessage } from "@/lib/firebase/errors";
 import {
   resetPasswordSchema,
   type ResetPasswordValues,
 } from "@/schemas/auth";
 
+type CodeState =
+  | { status: "checking" }
+  | { status: "valid"; email: string }
+  | { status: "invalid"; message: string };
+
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const oobCode = searchParams.get("oobCode");
   const [formError, setFormError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);
+  const [codeState, setCodeState] = React.useState<CodeState>(() =>
+    oobCode
+      ? { status: "checking" }
+      : {
+          status: "invalid",
+          message:
+            "This reset link is invalid. Please request a new password reset.",
+        },
+  );
 
   const {
     register,
@@ -35,6 +50,23 @@ export function ResetPasswordForm() {
   } = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
   });
+
+  React.useEffect(() => {
+    if (!oobCode) return;
+    let active = true;
+    verifyResetCode(oobCode)
+      .then((email) => {
+        if (active) setCodeState({ status: "valid", email });
+      })
+      .catch((error) => {
+        if (active) {
+          setCodeState({ status: "invalid", message: authErrorMessage(error) });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [oobCode]);
 
   async function onSubmit(values: ResetPasswordValues) {
     setFormError(null);
@@ -50,9 +82,18 @@ export function ResetPasswordForm() {
     }
   }
 
-  if (!oobCode) {
+  if (codeState.status === "checking") {
+    return <Skeleton className="h-40 w-full" />;
+  }
+
+  if (codeState.status === "invalid") {
     return (
-      <FormAlert message="This reset link is invalid. Please request a new password reset." />
+      <div className="space-y-4">
+        <FormAlert message={codeState.message} />
+        <Button asChild variant="secondary" className="w-full">
+          <Link href="/forgot-password">Request a new reset link</Link>
+        </Button>
+      </div>
     );
   }
 
@@ -70,6 +111,10 @@ export function ResetPasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormAlert message={formError} />
+      <p className="text-sm text-muted-foreground">
+        Resetting the password for{" "}
+        <span className="font-medium text-foreground">{codeState.email}</span>.
+      </p>
       <div>
         <Label htmlFor="password">New password</Label>
         <Input

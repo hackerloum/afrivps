@@ -3,8 +3,16 @@ import { z } from "zod";
 
 import { createSession, clearSession } from "@/lib/session";
 
+// The Firebase Admin SDK requires the Node.js runtime (not Edge), and session
+// responses must never be cached.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const bodySchema = z.object({
-  idToken: z.string().min(10),
+  // A Firebase ID token is a JWT: three base64url segments separated by dots.
+  idToken: z
+    .string()
+    .regex(/^[\w-]+\.[\w-]+\.[\w-]+$/, "Malformed token"),
 });
 
 /**

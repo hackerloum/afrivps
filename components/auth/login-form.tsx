@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -15,8 +15,15 @@ import { loginWithEmail } from "@/lib/firebase/auth";
 import { authErrorMessage } from "@/lib/firebase/errors";
 import { loginSchema, type LoginValues } from "@/schemas/auth";
 
+/** Only allow same-origin, absolute-path redirects to avoid open redirects. */
+function safeNext(next: string | null): string {
+  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+  return "/dashboard";
+}
+
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formError, setFormError] = React.useState<string | null>(null);
 
   const {
@@ -31,7 +38,7 @@ export function LoginForm() {
     setFormError(null);
     try {
       await loginWithEmail(values.email, values.password);
-      router.push("/dashboard");
+      router.push(safeNext(searchParams.get("next")));
       router.refresh();
     } catch (error) {
       setFormError(authErrorMessage(error));
