@@ -1,12 +1,18 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type { DecodedIdToken } from "firebase-admin/auth";
 
 import { adminAuth } from "@/lib/firebase/admin";
 import { serverEnv, useEmulators } from "@/lib/env";
 import type { UserRole } from "@/types";
-import { assertCan, isStaffRole, type Permission } from "@/lib/firebase/permissions";
+import {
+  assertCan,
+  can,
+  isStaffRole,
+  type Permission,
+} from "@/lib/firebase/permissions";
 
 export const SESSION_COOKIE_NAME = "afrivps_session";
 
@@ -88,6 +94,71 @@ export async function requirePermission(
 ): Promise<SessionUser> {
   const user = await requireUser();
   assertCan(user.role, permission);
+  return user;
+}
+
+/** Non-throwing check for the current session's permission. */
+export async function hasPermission(permission: Permission): Promise<boolean> {
+  const user = await getSession();
+  return can(user?.role, permission);
+}
+
+/** The current session's staff user, or `null` when absent / not staff. */
+export async function getStaffSession(): Promise<SessionUser | null> {
+  const user = await getSession();
+  return user && isStaffRole(user.role) ? user : null;
+}
+
+/**
+ * Redirect targets for the ergonomic layout guards below. Both default to the
+ * behavior the existing dashboard/admin layouts already implement, so guards
+ * can be adopted without changing UX.
+ */
+export interface GuardRedirects {
+  /** Where unauthenticated visitors are sent. Default: `/login`. */
+  loginPath?: string;
+  /** Where authenticated-but-unauthorized users are sent. Default: `/dashboard`. */
+  forbiddenPath?: string;
+}
+
+/**
+ * Ergonomic guard for protected layouts: returns the session or performs a
+ * server-side `redirect` to the login page. Never returns for anonymous users.
+ */
+export async function requireUserOrRedirect(
+  redirects: GuardRedirects = {},
+): Promise<SessionUser> {
+  const user = await getSession();
+  if (!user) redirect(redirects.loginPath ?? "/login");
+  return user;
+}
+
+/**
+ * Ergonomic guard for staff-only layouts (e.g. `/admin`). Redirects anonymous
+ * users to login and non-staff users to the customer dashboard.
+ */
+export async function requireStaffOrRedirect(
+  redirects: GuardRedirects = {},
+): Promise<SessionUser> {
+  const user = await getSession();
+  if (!user) redirect(redirects.loginPath ?? "/login");
+  if (!isStaffRole(user.role)) redirect(redirects.forbiddenPath ?? "/dashboard");
+  return user;
+}
+
+/**
+ * Ergonomic guard for permission-gated layouts/pages. Redirects anonymous users
+ * to login and users lacking `permission` to a safe fallback route.
+ */
+export async function requirePermissionOrRedirect(
+  permission: Permission,
+  redirects: GuardRedirects = {},
+): Promise<SessionUser> {
+  const user = await getSession();
+  if (!user) redirect(redirects.loginPath ?? "/login");
+  if (!can(user.role, permission)) {
+    redirect(redirects.forbiddenPath ?? "/dashboard");
+  }
   return user;
 }
 

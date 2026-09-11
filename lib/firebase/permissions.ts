@@ -99,6 +99,14 @@ const STAFF_ROLES: ReadonlySet<UserRole> = new Set<UserRole>([
   "finance",
 ]);
 
+/** All staff roles, ordered from most to least privileged (Section 5). */
+export const STAFF_ROLE_LIST: readonly StaffRole[] = [
+  "super_admin",
+  "admin",
+  "support",
+  "finance",
+];
+
 export function isStaffRole(role: UserRole | undefined | null): role is StaffRole {
   return role != null && STAFF_ROLES.has(role);
 }
@@ -119,6 +127,60 @@ export function assertCan(
     throw new PermissionError(permission);
   }
 }
+
+/** True when the role holds at least one of the given permissions. */
+export function canAny(
+  role: UserRole | undefined | null,
+  permissions: readonly Permission[],
+): boolean {
+  return permissions.some((permission) => can(role, permission));
+}
+
+/** True when the role holds every one of the given permissions. */
+export function canAll(
+  role: UserRole | undefined | null,
+  permissions: readonly Permission[],
+): boolean {
+  return permissions.every((permission) => can(role, permission));
+}
+
+/**
+ * The full set of permissions granted to a role. Non-staff roles (e.g.
+ * `customer`) always resolve to an empty set — staff capabilities never leak
+ * to customers.
+ */
+export function permissionsForRole(
+  role: UserRole | undefined | null,
+): ReadonlySet<Permission> {
+  if (!isStaffRole(role)) return EMPTY_PERMISSIONS;
+  return ROLE_PERMISSIONS[role];
+}
+
+/**
+ * A serializable snapshot of the role → permissions matrix (Section 5). Useful
+ * for admin tooling / documentation. Returns sorted arrays; mutating the result
+ * does not affect the underlying policy.
+ */
+export function getRolePermissionMatrix(): Record<StaffRole, Permission[]> {
+  const matrix = {} as Record<StaffRole, Permission[]>;
+  for (const role of STAFF_ROLE_LIST) {
+    matrix[role] = [...ROLE_PERMISSIONS[role]].sort();
+  }
+  return matrix;
+}
+
+/**
+ * Convenience guard for the sensitive internal financial data described in
+ * Section 46 (upstream provider cost / margin). Support staff are deliberately
+ * excluded; customers can never qualify.
+ */
+export function canViewProviderCosts(
+  role: UserRole | undefined | null,
+): boolean {
+  return can(role, "provider_costs.read");
+}
+
+const EMPTY_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>();
 
 export class PermissionError extends Error {
   readonly permission: Permission;
