@@ -41,7 +41,7 @@ export function PlanCard({
     { icon: MemoryStick, label: `${formatRam(plan.ramMB)} RAM` },
     {
       icon: HardDrive,
-      label: `${plan.storageGB} GB ${plan.storageType.toUpperCase()}`,
+      label: `${plan.storageGB} GB ${(plan.storageType ?? "nvme").toUpperCase()}`,
     },
     { icon: Network, label: `${plan.bandwidthGB} GB transfer` },
   ];
