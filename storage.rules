@@ -15,7 +15,9 @@ service firebase.storage {
       return request.auth.uid;
     }
     function role() {
-      return isSignedIn() ? request.auth.token.role : null;
+      return isSignedIn() && ('role' in request.auth.token)
+        ? request.auth.token.role
+        : null;
     }
     function isStaff() {
       return role() in ['super_admin', 'admin', 'support', 'finance'];

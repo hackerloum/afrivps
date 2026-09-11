@@ -24,7 +24,9 @@ service cloud.firestore {
       return request.auth.uid;
     }
     function role() {
-      return isSignedIn() ? request.auth.token.role : null;
+      return isSignedIn() && ('role' in request.auth.token)
+        ? request.auth.token.role
+        : null;
     }
     function isStaff() {
       return role() in ['super_admin', 'admin', 'support', 'finance'];
@@ -144,7 +146,12 @@ service cloud.firestore {
     // ---------- support tickets (customer-owned) ----------
     match /supportTickets/{ticketId} {
       allow read: if ownsExisting() || isStaff();
-      allow create: if ownsIncoming();
+      // A customer may open their OWN ticket, but must not pre-assign staff or
+      // set a privileged lifecycle status (only staff/server may do those).
+      allow create: if ownsIncoming()
+        && !request.resource.data.keys().hasAny(['assignedStaffId'])
+        && (!('status' in request.resource.data)
+              || request.resource.data.status == 'open');
       allow update: if isStaff();
       allow delete: if false;
 
