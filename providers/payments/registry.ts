@@ -24,3 +24,20 @@ export function getPaymentProvider(code: string): PaymentProvider {
 export function listPaymentProviders(): string[] {
   return Object.keys(providers);
 }
+
+/**
+ * Description of each registered payment provider for admin/config surfaces.
+ * `mode` distinguishes the manual (staff-confirmed) provider from API adapters
+ * that stay disabled until configured (Section 67).
+ */
+export interface PaymentProviderDescriptor {
+  code: string;
+  mode: "manual" | "api";
+}
+
+export function describePaymentProviders(): PaymentProviderDescriptor[] {
+  return listPaymentProviders().map((code) => {
+    const provider = getPaymentProvider(code);
+    return { code: provider.code, mode: provider.mode };
+  });
+}

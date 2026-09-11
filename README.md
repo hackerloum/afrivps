@@ -25,6 +25,9 @@ components/      ui/ (Radix primitives), brand/, site/, marketing/, auth/, shell
 lib/             firebase/ (client, admin, auth, permissions, errors),
                  data/ (server plan access), env.ts, money.ts, ids.ts, session.ts
 providers/       infrastructure/ (manual, bearhost placeholder), payments/
+services/        Application-service layer (orders, invoices, payments,
+                 provisioning, infrastructure, notifications, support, audit,
+                 customers) + credentials/ (secure credential vault)
 schemas/         Zod form schemas
 types/           Domain types (customer-safe DTO shapes)
 scripts/seed.ts  Development seed (emulator only)
@@ -167,6 +170,30 @@ never shown to customers.
 (Mobile Money / Bank Transfer / admin confirmation) is present and never
 auto-confirms — payments are verified server-side. `Flutterwave` and `Pesapal`
 adapters are disabled placeholders.
+
+## Application services
+
+`services/` centralizes business state transitions so Firestore mutations never
+scatter across pages/components (Sections 64, 65). Each domain has a typed
+contract: `OrderService`, `InvoiceService`, `PaymentService`,
+`ProvisioningService`, `InfrastructureService`, `NotificationService`,
+`SupportService`, `AuditService`, `CustomerService`. Phase 1 ships the
+interfaces and the parts genuinely available today — `PaymentService` and
+`InfrastructureService` delegate to the provider registries, and
+`computeInvoiceTotals` performs money-safe (integer minor-unit) totals.
+Persistence-bound methods throw `ServiceNotImplementedError` until their phase,
+so "not yet implemented" is explicit rather than faked.
+
+## Server credential security
+
+Server login credentials are extremely sensitive and are never stored in
+customer-accessible documents, audit logs, or notifications (Section 21).
+`services/credentials/vault.ts` defines the `CredentialVault` contract, but the
+default `DisabledCredentialVault` stores/reveals nothing and throws
+`CredentialStorageUnavailableError`. Production persistence stays unavailable
+until a real secret-management mechanism (e.g. Cloud KMS envelope encryption or
+Secret Manager) is injected via `configureCredentialVault`. Elsewhere,
+credentials are referenced only by an opaque `credentialReference`.
 
 ## Phase status
 

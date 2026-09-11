@@ -252,7 +252,75 @@ const PROVIDERS = [
     createdAt: now,
     updatedAt: now,
   },
+  {
+    id: "provider_bearhost",
+    name: "BearHost (upstream)",
+    code: "bearhost",
+    // Disabled placeholder: API access not yet available. Never customer-facing.
+    enabled: false,
+    provisioningMode: "api",
+    supportedProducts: ["linux_vps", "windows_vps", "windows_rdp", "cpanel"],
+    priority: 2,
+    capabilities: [],
+    healthStatus: "unknown",
+    createdAt: now,
+    updatedAt: now,
+  },
 ];
+
+// Payment providers mirror `providers/payments` registry codes. Only manual is
+// enabled at launch; API adapters stay disabled until configured (Section 67).
+const PAYMENT_PROVIDERS = [
+  {
+    id: "pp_manual",
+    code: "manual",
+    name: "Manual (Mobile Money / Bank Transfer)",
+    mode: "manual",
+    enabled: true,
+    methods: ["mobile_money", "bank_transfer", "admin_confirmation"],
+    priority: 1,
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    id: "pp_flutterwave",
+    code: "flutterwave",
+    name: "Flutterwave",
+    mode: "api",
+    enabled: false,
+    methods: [],
+    priority: 2,
+    note: "Disabled placeholder — enable once API credentials are configured.",
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    id: "pp_pesapal",
+    code: "pesapal",
+    name: "Pesapal",
+    mode: "api",
+    enabled: false,
+    methods: [],
+    priority: 3,
+    note: "Disabled placeholder — enable once API credentials are configured.",
+    createdAt: now,
+    updatedAt: now,
+  },
+];
+
+// Feature flags (Section 52). New integrations stay OFF until ready/tested.
+const FEATURE_FLAGS = {
+  automaticProvisioning: false,
+  automaticSuspension: false,
+  automaticTermination: false,
+  flutterwavePayments: false,
+  pesapalPayments: false,
+  windowsVps: true,
+  cpanelHosting: false,
+  coupons: false,
+  referrals: false,
+  pushNotifications: false,
+};
 
 function adminApp(): App {
   // No credential needed: the Admin SDK connects to the emulators via the
@@ -305,10 +373,25 @@ async function main(): Promise<void> {
   for (const loc of SEED_LOCATIONS) {
     batch.set(db.collection("locations").doc(loc.id), loc);
   }
-  // Providers
+  // Providers (infrastructure)
   for (const provider of PROVIDERS) {
     batch.set(db.collection("providers").doc(provider.id), provider);
   }
+  // Payment providers
+  for (const pp of PAYMENT_PROVIDERS) {
+    batch.set(db.collection("paymentProviders").doc(pp.id), pp);
+  }
+  // System settings: feature flags + an explicit DEV environment marker so it
+  // is obvious this data is seeded development data, not production.
+  batch.set(db.collection("systemSettings").doc("featureFlags"), {
+    ...FEATURE_FLAGS,
+    updatedAt: now,
+  });
+  batch.set(db.collection("systemSettings").doc("environment"), {
+    environment: "development",
+    seededAt: now,
+    note: "DEV seed data — demo values only, NOT official production prices or accounts.",
+  });
 
   // Plans (customer-safe) + providerProducts (server-only cost mapping)
   for (const plan of PLANS) {
@@ -332,7 +415,9 @@ async function main(): Promise<void> {
   }
 
   await batch.commit();
-  console.log(`  ✓ ${PLANS.length} plans, ${OPERATING_SYSTEMS.length} OS images, ${SEED_LOCATIONS.length} locations, ${PROVIDERS.length} provider`);
+  console.log(
+    `  ✓ ${PLANS.length} plans, ${OPERATING_SYSTEMS.length} OS images, ${SEED_LOCATIONS.length} locations, ${PROVIDERS.length} infra providers, ${PAYMENT_PROVIDERS.length} payment providers, feature flags`,
+  );
 
   // Dev accounts
   const adminUid = await upsertUser(

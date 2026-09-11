@@ -23,13 +23,18 @@ lib/
   data/                # server-side data access (plans, ...)
   env.ts money.ts ids.ts utils.ts session.ts
 providers/
-  infrastructure/      # types, manual, bearhost (placeholder), registry
-  payments/            # types, manual, flutterwave/pesapal (placeholder), registry
+  infrastructure/      # types, manual, bearhost (placeholder), registry, barrel
+  payments/            # types, manual, flutterwave/pesapal (placeholder), registry, barrel
+services/              # application-service layer (Section 65)
+  order/invoice/payment/provisioning/infrastructure/notification/
+  support/audit/customer services + credentials/ (secure vault)
 schemas/ types/ scripts/ tests/ docs/
 ```
 
-Business logic lives in `lib/` and `providers/`, never inside large React
-components (Section 64).
+Business logic lives in `lib/`, `providers/` and `services/`, never inside large
+React components (Sections 64, 65). The service layer centralizes Firestore
+state transitions; Phase 1 ships the typed contracts plus the provider/payment
+delegations and money-safe invoice totals that are genuinely available today.
 
 ## 2. Firebase client architecture
 
@@ -101,7 +106,9 @@ scattered (Section 5).
 control throws rather than faking success). `BearHostProvider` is a **safe
 placeholder** — no invented endpoints or auth; every op throws
 `NotImplementedError` until official docs arrive. A registry resolves providers
-by code so nothing hardcodes BearHost (Sections 24, 66).
+by code (with `describeInfrastructureProviders()` exposing honest, capability-
+aware descriptors for admin UI) so nothing hardcodes BearHost (Sections 24, 66).
+`InfrastructureService` wraps the registry as the application-facing entry point.
 
 ## 11. Payment abstraction
 
@@ -109,13 +116,18 @@ by code so nothing hardcodes BearHost (Sections 24, 66).
 `ManualPaymentProvider` is structurally present and never auto-confirms; staff
 confirm payments server-side. `FlutterwaveProvider` / `PesapalProvider` are
 disabled placeholders. Checkout stays provider-agnostic via a registry
-(Sections 30, 67).
+(Sections 30, 67), and `PaymentService` delegates initialize/verify/webhook/
+getTransaction to the resolved provider — payment status is confirmed
+server-side and never trusted from the browser (Sections 30, 32).
 
 ## 12. Security boundaries
 
 - Admin SDK and secrets are server-only (`server-only` import guard).
 - Money is integer minor units; provider cost / margins never reach customers.
 - Server credential persistence is intentionally **not implemented** — the
-  interface exists and is marked unavailable until a secret-management mechanism
-  is configured (Section 21). No fake security.
+  `CredentialVault` interface exists in `services/credentials/vault.ts`, but the
+  default `DisabledCredentialVault` throws `CredentialStorageUnavailableError`
+  until a secret-management mechanism is injected via `configureCredentialVault`
+  (Section 21). Credentials are referenced only by opaque `credentialReference`.
+  No fake security.
 - Errors returned to customers are sanitized (Section 58).
