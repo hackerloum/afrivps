@@ -1,7 +1,8 @@
 import "server-only";
 
 import { adminDb } from "@/lib/firebase/admin";
-import type { Plan, ProductType } from "@/types";
+import { paginateQuery } from "@/lib/data/query";
+import type { Page, PageParams, Plan, ProductType } from "@/types";
 
 /**
  * Server-side plan access. Plans are loaded from Firestore (never hardcoded in
@@ -84,6 +85,24 @@ export async function getPlansByTypeSafe(type: ProductType): Promise<Plan[]> {
   } catch {
     return [];
   }
+}
+
+/**
+ * Paginated plan listing for admin tables (Section 47). Ordered by
+ * `displayOrder` then `id` (stable tiebreaker for cursoring). Only customer-safe
+ * fields are mapped — cost mapping stays in `providerProducts`.
+ */
+export async function getPlansPage(params: PageParams): Promise<Page<Plan>> {
+  return paginateQuery<Plan>(adminDb().collection("plans"), {
+    orderBy: [
+      { field: "displayOrder", direction: params.direction ?? "asc" },
+      { field: "id", direction: params.direction ?? "asc" },
+    ],
+    limit: params.limit,
+    cursor: params.cursor,
+    map: (id, data) => toSafePlan(id, data),
+    cursorFields: (plan) => [plan.displayOrder, plan.id],
+  });
 }
 
 export async function getPlanBySlug(slug: string): Promise<Plan | null> {
