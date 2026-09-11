@@ -10,9 +10,12 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   // A Firebase ID token is a JWT: three base64url segments separated by dots.
+  // The signature segment may be empty for tokens minted by the Firebase Auth
+  // emulator (`header.payload.`); the Admin SDK in `createSession` performs the
+  // real cryptographic verification, so this is only a cheap structural check.
   idToken: z
     .string()
-    .regex(/^[\w-]+\.[\w-]+\.[\w-]+$/, "Malformed token"),
+    .regex(/^[\w-]+\.[\w-]+\.[\w-]*$/, "Malformed token"),
 });
 
 /**
