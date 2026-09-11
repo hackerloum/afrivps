@@ -11,14 +11,22 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// NOTE: `icon` values are constrained to the shared ICONS map in
+// components/shell/app-shell.tsx (owned by another section). That map has no
+// dedicated invoices/payments/security icons yet, so we reuse the closest
+// available marks (audit/billing/settings). A cross-area request to add
+// `invoices`, `payments` and `security` icons is noted in the final report.
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: "overview" },
   { href: "/dashboard/services", label: "Services", icon: "services" },
   { href: "/dashboard/orders", label: "Orders", icon: "orders" },
   { href: "/dashboard/billing", label: "Billing", icon: "billing" },
+  { href: "/dashboard/invoices", label: "Invoices", icon: "invoices" },
+  { href: "/dashboard/payments", label: "Payments", icon: "payments" },
   { href: "/dashboard/support", label: "Support", icon: "support" },
   { href: "/dashboard/notifications", label: "Notifications", icon: "notifications" },
   { href: "/dashboard/account", label: "Account", icon: "account" },
+  { href: "/dashboard/security", label: "Security", icon: "security" },
 ];
 
 export default async function DashboardLayout({
