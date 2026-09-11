@@ -65,6 +65,27 @@ export async function getPlansByType(type: ProductType): Promise<Plan[]> {
   return plans.filter((p) => p.productType === type);
 }
 
+/**
+ * Non-throwing variants for public pages: if Firestore/emulator is unreachable
+ * (e.g. during a build with no emulator running) we render the empty state
+ * rather than failing the render.
+ */
+export async function getActivePlansSafe(): Promise<Plan[]> {
+  try {
+    return await getActivePlans();
+  } catch {
+    return [];
+  }
+}
+
+export async function getPlansByTypeSafe(type: ProductType): Promise<Plan[]> {
+  try {
+    return await getPlansByType(type);
+  } catch {
+    return [];
+  }
+}
+
 export async function getPlanBySlug(slug: string): Promise<Plan | null> {
   const snapshot = await adminDb()
     .collection("plans")

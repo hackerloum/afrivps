@@ -109,7 +109,7 @@ export function parseToMinorUnits(input: string, currency: Currency): number {
   if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
     throw new Error(`Invalid money input: ${input}`);
   }
-  const [whole, frac = ""] = normalized.split(".");
+  const [whole = "0", frac = ""] = normalized.split(".");
   const negative = whole.startsWith("-");
   const wholeDigits = whole.replace("-", "");
   const paddedFrac = frac.padEnd(digits, "0").slice(0, digits);

@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+ * AfriVPS design system — premium dark infrastructure aesthetic (Sections 12-13, 73).
+ * Near-black graphite base, emerald/electric-green accent, off-white text,
+ * cool-grey secondary text. Subtle grid + glow, restrained radii.
+ */
+
+@theme {
+  --color-background: #08090b;
+  --color-foreground: #e7eaee;
+
+  --color-surface: #0e1013;
+  --color-card: #101317;
+  --color-card-foreground: #e7eaee;
+
+  --color-elevated: #161a20;
+
+  --color-muted: #14171c;
+  --color-muted-foreground: #8b929d;
+
+  --color-border: #1d2229;
+  --color-input: #1d2229;
+  --color-ring: #34d399;
+
+  --color-primary: #10b981;
+  --color-primary-foreground: #04120c;
+  --color-primary-muted: #0c4a37;
+
+  --color-accent: #34d399;
+  --color-accent-foreground: #04120c;
+
+  --color-secondary: #161a20;
+  --color-secondary-foreground: #c7ccd4;
+
+  --color-destructive: #f26d6d;
+  --color-destructive-foreground: #1a0606;
+
+  --color-warning: #f0b45e;
+  --color-success: #34d399;
+  --color-info: #5eb0f0;
+
+  --radius: 0.5rem;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-accent) 30%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
+@layer utilities {
+  /* Subtle network/grid background used behind hero + section dividers. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-border) 60%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-border) 60%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .bg-radial-fade {
+    background:
+      radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--color-accent) 12%, transparent) 0%, transparent 70%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(180deg, #ffffff 0%, #9aa2ad 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-accent) 25%, transparent),
+      0 0 32px -8px color-mix(in oklab, var(--color-accent) 45%, transparent);
+  }
+
+  .card-surface {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+}
