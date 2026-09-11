@@ -1,23 +1,12 @@
-import { CreditCard } from "lucide-react";
-
-import { EmptyState, PageHeader } from "@/components/shell/empty-state";
-import { requirePermission } from "@/lib/session";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Billing has been split into dedicated Invoices and Payments sections
+ * (Sections 27, 73). This route is kept for backward-compatible links and
+ * redirects to Invoices.
+ */
 export default async function AdminBillingPage() {
-  await requirePermission("invoices.read");
-  return (
-    <div>
-      <PageHeader
-        title="Billing"
-        description="Invoices and payments across all customers."
-      />
-      <EmptyState
-        icon={CreditCard}
-        title="No billing records"
-        description="Invoices and payments will appear here (Phase 2)."
-      />
-    </div>
-  );
+  redirect("/admin/invoices");
 }
