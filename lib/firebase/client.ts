@@ -24,24 +24,46 @@ const firebaseConfig = {
   appId: publicEnv.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Emulator host/ports. Kept in sync with `firebase.json` so the Web SDK, the
+// Admin SDK and the emulator processes all agree on where each service lives.
+const EMULATOR_HOST = "127.0.0.1";
+const EMULATOR_PORTS = { auth: 9099, firestore: 8080, storage: 9199 } as const;
+
 // Guard against duplicate initialization during Next.js hot reload / RSC.
 function getClientApp(): FirebaseApp {
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
 
-let emulatorsConnected = false;
+/**
+ * The emulator-connection guard is persisted on `globalThis` rather than a
+ * plain module-level variable. During Next.js HMR the module can be
+ * re-evaluated (resetting module state) while the underlying `FirebaseApp`
+ * persists — connecting the emulators a second time throws "already
+ * started/connected" errors. A global flag keyed to the app makes the
+ * connection strictly idempotent across reloads.
+ */
+const EMULATOR_GUARD_KEY = "__afrivps_firebase_emulators_connected__";
+
+type EmulatorGuardHolder = typeof globalThis & {
+  [EMULATOR_GUARD_KEY]?: boolean;
+};
 
 function connectEmulatorsOnce(
   auth: Auth,
   db: Firestore,
   storage: FirebaseStorage,
 ): void {
-  if (emulatorsConnected || !useEmulators) return;
-  emulatorsConnected = true;
+  if (!useEmulators) return;
 
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
-  connectStorageEmulator(storage, "127.0.0.1", 9199);
+  const holder = globalThis as EmulatorGuardHolder;
+  if (holder[EMULATOR_GUARD_KEY]) return;
+  holder[EMULATOR_GUARD_KEY] = true;
+
+  connectAuthEmulator(auth, `http://${EMULATOR_HOST}:${EMULATOR_PORTS.auth}`, {
+    disableWarnings: true,
+  });
+  connectFirestoreEmulator(db, EMULATOR_HOST, EMULATOR_PORTS.firestore);
+  connectStorageEmulator(storage, EMULATOR_HOST, EMULATOR_PORTS.storage);
 }
 
 export function getFirebaseClient(): {

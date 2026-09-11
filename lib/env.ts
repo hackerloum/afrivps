@@ -13,6 +13,26 @@ const truthy = z
   .optional()
   .transform((v) => v === "true" || v === "1");
 
+/**
+ * Turn a ZodError into a clear, human-readable message. Each invalid or missing
+ * variable is listed on its own line so misconfiguration is obvious at a glance
+ * and can be fixed against `.env.example`.
+ */
+function formatEnvError(
+  scope: "public" | "server",
+  error: z.ZodError,
+): string {
+  const lines = error.issues.map((issue) => {
+    const name = issue.path.join(".") || "(root)";
+    return `  - ${name}: ${issue.message}`;
+  });
+  return [
+    `Invalid ${scope} environment configuration:`,
+    ...lines,
+    `Fix the ${scope === "public" ? "NEXT_PUBLIC_* (browser-safe)" : "server-only"} variables above. See .env.example for the full list.`,
+  ].join("\n");
+}
+
 const publicSchema = z.object({
   NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1),
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().min(1),
@@ -39,7 +59,15 @@ const rawPublic = {
     process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS,
 };
 
-export const publicEnv = publicSchema.parse(rawPublic);
+function parsePublicEnv(): z.infer<typeof publicSchema> {
+  const result = publicSchema.safeParse(rawPublic);
+  if (!result.success) {
+    throw new Error(formatEnvError("public", result.error));
+  }
+  return result.data;
+}
+
+export const publicEnv = parsePublicEnv();
 
 export const useEmulators = publicEnv.NEXT_PUBLIC_USE_FIREBASE_EMULATORS;
 
@@ -67,7 +95,11 @@ let cachedServerEnv: ServerEnv | null = null;
 export function serverEnv(): ServerEnv {
   if (cachedServerEnv) return cachedServerEnv;
 
-  const parsed = serverSchema.parse(process.env);
+  const result = serverSchema.safeParse(process.env);
+  if (!result.success) {
+    throw new Error(formatEnvError("server", result.error));
+  }
+  const parsed = result.data;
 
   // When not using emulators, Admin credentials are mandatory.
   if (!useEmulators) {
