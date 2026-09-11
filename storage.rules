@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// AfriVPS Storage Security Rules
+//
+// Customers may only access files that belong to them. Sensitive material
+// (server credentials, API tokens, provider secrets) must NEVER be stored here.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    function role() {
+      return isSignedIn() ? request.auth.token.role : null;
+    }
+    function isStaff() {
+      return role() in ['super_admin', 'admin', 'support', 'finance'];
+    }
+
+    function isValidAttachment() {
+      return request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('text/plain')
+        );
+    }
+
+    // Support ticket attachments, scoped by owning customer uid.
+    match /support/{customerId}/{ticketId}/{fileName} {
+      allow read: if isSignedIn() && (uid() == customerId || isStaff());
+      allow write: if isSignedIn() && uid() == customerId && isValidAttachment();
+    }
+
+    // Optional per-user profile assets.
+    match /users/{userId}/{fileName} {
+      allow read: if isSignedIn() && (uid() == userId || isStaff());
+      allow write: if isSignedIn() && uid() == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Server-generated invoice PDFs (read-only for the owner, written server-side).
+    match /invoices/{customerId}/{fileName} {
+      allow read: if isSignedIn() && (uid() == customerId || isStaff());
+      allow write: if false;
+    }
+
+    // Default deny.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

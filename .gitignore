@@ -1,0 +1,40 @@
+# dependencies
+/node_modules
+.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# testing
+/coverage
+
+# firebase emulator
+/firebase-debug.log
+/firestore-debug.log
+/storage-debug.log
+/ui-debug.log
+/database-debug.log
+/pubsub-debug.log
+.firebase/
+firebase-export-*/
+firestore-export/
+
+# env files (never commit real secrets)
+.env
+.env*.local
+.env.local
+serviceAccount*.json
+
+# misc
+.DS_Store
+*.pem
+.vscode/
+.idea/
+/tsconfig.tsbuildinfo
+*.tsbuildinfo
