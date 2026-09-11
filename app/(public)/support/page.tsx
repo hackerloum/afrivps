@@ -1,16 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, LifeBuoy, Ticket } from "lucide-react";
 
 import { PageHero } from "@/components/marketing/page-hero";
 import { Section } from "@/components/marketing/section";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Support",
-  description: "AfriVPS support center.",
-};
+  description:
+    "AfriVPS support center — billing, technical and general help through a proper ticketing system.",
+  path: "/support",
+});
 
 export default function SupportPage() {
   return (

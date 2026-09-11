@@ -1,17 +1,18 @@
-import type { Metadata } from "next";
 import { KeyRound, MonitorCheck, ShieldCheck } from "lucide-react";
 
 import { ProductLanding } from "@/components/marketing/product-landing";
+import { pageMetadata } from "@/components/marketing/seo";
 import { getPlansByTypeSafe } from "@/lib/data/plans";
 import type { Plan } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Windows VPS & RDP",
   description:
     "Licensed Windows Server and RDP with straightforward pricing for African businesses.",
-};
+  path: "/windows-vps",
+});
 
 export default async function WindowsVpsPage() {
   const [windowsVps, windowsRdp] = await Promise.all([

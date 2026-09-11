@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
-
 import { LegalPage } from "@/components/marketing/legal-page";
+import { pageMetadata } from "@/components/marketing/seo";
 
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata = pageMetadata({
+  title: "Privacy Policy",
+  description: "How AfriVPS collects, uses and protects your information.",
+  path: "/legal/privacy",
+});
 
 export default function PrivacyPage() {
   return (

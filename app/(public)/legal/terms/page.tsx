@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
-
 import { LegalPage } from "@/components/marketing/legal-page";
+import { pageMetadata } from "@/components/marketing/seo";
 
-export const metadata: Metadata = { title: "Terms of Service" };
+export const metadata = pageMetadata({
+  title: "Terms of Service",
+  description: "The terms that govern your use of AfriVPS services.",
+  path: "/legal/terms",
+});
 
 export default function TermsPage() {
   return (

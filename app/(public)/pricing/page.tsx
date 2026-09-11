@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
-
 import { PricingPlans } from "@/components/marketing/pricing-plans";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Section, SectionHeading } from "@/components/marketing/section";
 import { getActivePlansSafe } from "@/lib/data/plans";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Pricing",
   description:
     "Straightforward VPS pricing in TZS and USD. Monthly, quarterly and annual billing.",
-};
+  path: "/pricing",
+});
 
 export default async function PricingPage() {
   const plans = await getActivePlansSafe();

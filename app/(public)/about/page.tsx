@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
-
 import { PageHero } from "@/components/marketing/page-hero";
 import { Section } from "@/components/marketing/section";
+import { pageMetadata } from "@/components/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "About",
-  description: "About AfriVPS — cloud infrastructure for Africa.",
-};
+  description:
+    "About AfriVPS — cloud infrastructure for Africa, with transparent pricing and honest infrastructure.",
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

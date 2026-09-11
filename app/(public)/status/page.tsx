@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
-
 import { PageHero } from "@/components/marketing/page-hero";
 import { Section } from "@/components/marketing/section";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Status",
-  description: "AfriVPS platform status.",
-};
+  description:
+    "AfriVPS platform status, maintained by our operations team. No fabricated uptime figures.",
+  path: "/status",
+});
 
 // Status is administrator-updated for now (Section 53). No fabricated uptime.
 const SERVICES = [

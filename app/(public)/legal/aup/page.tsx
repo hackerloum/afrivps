@@ -1,8 +1,12 @@
-import type { Metadata } from "next";
-
 import { LegalPage } from "@/components/marketing/legal-page";
+import { pageMetadata } from "@/components/marketing/seo";
 
-export const metadata: Metadata = { title: "Acceptable Use Policy" };
+export const metadata = pageMetadata({
+  title: "Acceptable Use Policy",
+  description:
+    "Rules that keep the AfriVPS platform safe and reliable for everyone.",
+  path: "/legal/aup",
+});
 
 export default function AupPage() {
   return (

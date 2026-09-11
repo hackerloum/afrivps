@@ -1,14 +1,16 @@
-import type { Metadata } from "next";
 import { Globe, Mail, Shield } from "lucide-react";
 
 import { PageHero } from "@/components/marketing/page-hero";
 import { Section } from "@/components/marketing/section";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Web Hosting",
-  description: "cPanel web hosting for websites and email, built for African businesses.",
-};
+  description:
+    "cPanel web hosting for websites and email, built for African businesses.",
+  path: "/web-hosting",
+});
 
 const FEATURES = [
   {

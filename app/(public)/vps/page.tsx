@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
 import { Cpu, Gauge, ShieldCheck } from "lucide-react";
 
 import { ProductLanding } from "@/components/marketing/product-landing";
+import { pageMetadata } from "@/components/marketing/seo";
 import { getPlansByTypeSafe } from "@/lib/data/plans";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Linux VPS",
   description:
     "High-performance Linux VPS with NVMe storage, full root access and popular distributions.",
-};
+  path: "/vps",
+});
 
 export default async function VpsPage() {
   const plans = await getPlansByTypeSafe("linux_vps");

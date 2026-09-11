@@ -1,18 +1,20 @@
-import type { Metadata } from "next";
 import { MapPin } from "lucide-react";
 
 import { PageHero } from "@/components/marketing/page-hero";
 import { Section } from "@/components/marketing/section";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Card } from "@/components/ui/card";
 import { adminDb } from "@/lib/firebase/admin";
 import type { Location } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Network",
-  description: "AfriVPS network locations and infrastructure.",
-};
+  description:
+    "AfriVPS network locations and infrastructure, managed from our systems — never fabricated.",
+  path: "/network",
+});
 
 async function getLocations(): Promise<Location[]> {
   try {

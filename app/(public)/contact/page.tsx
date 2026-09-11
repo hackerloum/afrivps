@@ -1,14 +1,16 @@
-import type { Metadata } from "next";
 import { Mail, MessageSquare } from "lucide-react";
 
 import { PageHero } from "@/components/marketing/page-hero";
 import { Section } from "@/components/marketing/section";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Contact",
-  description: "Get in touch with AfriVPS.",
-};
+  description:
+    "Get in touch with AfriVPS about plans, billing or your account.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

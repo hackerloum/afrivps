@@ -16,13 +16,22 @@ import {
 
 import { PlanCard } from "@/components/marketing/plan-card";
 import { EmptyPlans } from "@/components/marketing/pricing-plans";
+import { pageMetadata } from "@/components/marketing/seo";
 import { Section, SectionHeading } from "@/components/marketing/section";
+import { SiteJsonLd } from "@/components/marketing/structured-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getActivePlansSafe } from "@/lib/data/plans";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = pageMetadata({
+  title: "Cloud Infrastructure for Africa",
+  description:
+    "Fast VPS, Windows servers and hosting with straightforward pricing and support built for African businesses and developers.",
+  path: "/",
+});
 
 const WHY = [
   {
@@ -102,6 +111,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col">
+      <SiteJsonLd />
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-grid opacity-[0.35]" aria-hidden />
@@ -173,6 +183,69 @@ export default async function HomePage() {
           )}
         </div>
       </Section>
+
+      {/* Linux VPS + Windows VPS */}
+      <div className="border-y border-border bg-surface">
+        <Section className="grid gap-6 py-20 lg:grid-cols-2">
+          <Card className="flex flex-col p-8">
+            <div className="flex size-11 items-center justify-center rounded-[var(--radius)] border border-border bg-elevated">
+              <Terminal className="size-5 text-accent" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold text-foreground">
+              Linux VPS
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              KVM virtual machines with full root access and NVMe storage. Run
+              the popular Linux distributions you already know.
+            </p>
+            <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
+              {["Full root access", "NVMe-backed storage", "IPv4 + IPv6"].map(
+                (item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Zap className="size-4 text-accent" />
+                    {item}
+                  </li>
+                ),
+              )}
+            </ul>
+            <div className="mt-6 flex-1" />
+            <Button asChild variant="outline" className="mt-2 w-fit">
+              <Link href="/vps">
+                Explore Linux VPS <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-col p-8">
+            <div className="flex size-11 items-center justify-center rounded-[var(--radius)] border border-border bg-elevated">
+              <MonitorSmartphone className="size-5 text-accent" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold text-foreground">
+              Windows VPS &amp; RDP
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Licensed Windows Server and Remote Desktop with predictable
+              pricing and managed onboarding while automation rolls out.
+            </p>
+            <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
+              {["Licensed Windows", "Remote Desktop access", "IPv4 included"].map(
+                (item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <ShieldCheck className="size-4 text-accent" />
+                    {item}
+                  </li>
+                ),
+              )}
+            </ul>
+            <div className="mt-6 flex-1" />
+            <Button asChild variant="outline" className="mt-2 w-fit">
+              <Link href="/windows-vps">
+                Explore Windows VPS <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </Card>
+        </Section>
+      </div>
 
       {/* Why AfriVPS */}
       <div className="border-y border-border bg-surface">
