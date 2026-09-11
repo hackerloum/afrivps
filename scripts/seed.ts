@@ -9,7 +9,7 @@
  *      or:  firebase emulators:exec --only firestore,auth "tsx scripts/seed.ts"
  */
 
-import { cert, initializeApp, type App } from "firebase-admin/app";
+import { initializeApp, type App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -255,16 +255,9 @@ const PROVIDERS = [
 ];
 
 function adminApp(): App {
-  return initializeApp({
-    projectId: PROJECT_ID,
-    // Dummy credential; the emulator ignores it.
-    credential: cert({
-      projectId: PROJECT_ID,
-      clientEmail: `seed@${PROJECT_ID}.iam.gserviceaccount.com`,
-      privateKey:
-        "-----BEGIN PRIVATE KEY-----\nMIIB\n-----END PRIVATE KEY-----\n",
-    }),
-  });
+  // No credential needed: the Admin SDK connects to the emulators via the
+  // *_EMULATOR_HOST env vars set above.
+  return initializeApp({ projectId: PROJECT_ID });
 }
 
 async function upsertUser(

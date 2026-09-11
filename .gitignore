@@ -31,6 +31,10 @@ firestore-export/
 .env.local
 serviceAccount*.json
 
+# next.js generated agent instruction files
+/AGENTS.md
+/CLAUDE.md
+
 # misc
 .DS_Store
 *.pem

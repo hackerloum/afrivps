@@ -3,17 +3,54 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  Boxes,
+  CreditCard,
+  LayoutDashboard,
+  LifeBuoy,
+  Menu,
+  Package,
+  ScrollText,
+  Server,
+  Settings,
+  ShoppingCart,
+  UserCog,
+  Users,
+  Wrench,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 import { LogoutButton } from "@/components/shell/logout-button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+// Icon names are passed across the server/client boundary as strings (React
+// forbids passing component functions from Server to Client Components).
+const ICONS = {
+  overview: LayoutDashboard,
+  services: Server,
+  orders: ShoppingCart,
+  billing: CreditCard,
+  support: LifeBuoy,
+  notifications: Bell,
+  account: UserCog,
+  customers: Users,
+  provisioning: Wrench,
+  products: Package,
+  providers: Boxes,
+  audit: ScrollText,
+  settings: Settings,
+} satisfies Record<string, LucideIcon>;
+
+export type NavIcon = keyof typeof ICONS;
+
 export interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: NavIcon;
 }
 
 export interface AppShellUser {
@@ -54,6 +91,7 @@ export function AppShell({
         {navItems.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = ICONS[item.icon];
           return (
             <Link
               key={item.href}
@@ -66,9 +104,7 @@ export function AppShell({
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
-              <item.icon
-                className={cn("size-4", active && "text-accent")}
-              />
+              <Icon className={cn("size-4", active && "text-accent")} />
               {item.label}
             </Link>
           );

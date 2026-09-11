@@ -1,23 +1,9 @@
 import { redirect } from "next/navigation";
-import {
-  Boxes,
-  CreditCard,
-  LayoutDashboard,
-  LifeBuoy,
-  Package,
-  ScrollText,
-  Server,
-  Settings,
-  ShoppingCart,
-  Users,
-  Wrench,
-} from "lucide-react";
+import type { Metadata } from "next";
 
 import { AppShell, type NavItem } from "@/components/shell/app-shell";
 import { getSession } from "@/lib/session";
 import { isStaffRole } from "@/lib/firebase/permissions";
-
-import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -26,17 +12,17 @@ export const metadata: Metadata = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/services", label: "Services", icon: Server },
-  { href: "/admin/provisioning", label: "Provisioning", icon: Wrench },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/billing", label: "Billing", icon: CreditCard },
-  { href: "/admin/support", label: "Support", icon: LifeBuoy },
-  { href: "/admin/providers", label: "Providers", icon: Boxes },
-  { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Overview", icon: "overview" },
+  { href: "/admin/orders", label: "Orders", icon: "orders" },
+  { href: "/admin/customers", label: "Customers", icon: "customers" },
+  { href: "/admin/services", label: "Services", icon: "services" },
+  { href: "/admin/provisioning", label: "Provisioning", icon: "provisioning" },
+  { href: "/admin/products", label: "Products", icon: "products" },
+  { href: "/admin/billing", label: "Billing", icon: "billing" },
+  { href: "/admin/support", label: "Support", icon: "support" },
+  { href: "/admin/providers", label: "Providers", icon: "providers" },
+  { href: "/admin/audit-logs", label: "Audit Logs", icon: "audit" },
+  { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
