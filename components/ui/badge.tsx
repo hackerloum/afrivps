@@ -4,18 +4,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium leading-none transition-colors",
   {
     variants: {
       variant: {
         default: "border-border bg-secondary text-secondary-foreground",
-        accent:
-          "border-transparent bg-primary-muted text-accent",
-        success: "border-transparent bg-primary-muted text-success",
+        accent: "border-transparent bg-primary-muted text-accent",
+        success:
+          "border-[color-mix(in_oklab,var(--color-success)_25%,transparent)] bg-primary-muted text-success",
         warning:
-          "border-transparent bg-[color-mix(in_oklab,var(--color-warning)_18%,transparent)] text-warning",
+          "border-[color-mix(in_oklab,var(--color-warning)_25%,transparent)] bg-[color-mix(in_oklab,var(--color-warning)_18%,transparent)] text-warning",
         destructive:
-          "border-transparent bg-[color-mix(in_oklab,var(--color-destructive)_18%,transparent)] text-destructive",
+          "border-[color-mix(in_oklab,var(--color-destructive)_25%,transparent)] bg-[color-mix(in_oklab,var(--color-destructive)_18%,transparent)] text-destructive",
+        info: "border-[color-mix(in_oklab,var(--color-info)_25%,transparent)] bg-[color-mix(in_oklab,var(--color-info)_16%,transparent)] text-info",
+        neutral:
+          "border-transparent bg-muted text-muted-foreground",
         outline: "border-border bg-transparent text-muted-foreground",
       },
     },

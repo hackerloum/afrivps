@@ -4,8 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
+import { Spinner } from "@/components/ui/spinner";
 import { logout } from "@/lib/firebase/auth";
-import { cn } from "@/lib/utils";
+import { cn, focusRing } from "@/lib/utils";
 
 export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
@@ -29,10 +30,11 @@ export function LogoutButton({ className }: { className?: string }) {
       disabled={loading}
       className={cn(
         "flex w-full items-center gap-2 rounded-[var(--radius)] px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-60",
+        focusRing,
         className,
       )}
     >
-      <LogOut className="size-4" />
+      {loading ? <Spinner className="size-4" /> : <LogOut className="size-4" />}
       {loading ? "Signing out…" : "Sign out"}
     </button>
   );

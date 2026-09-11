@@ -2,48 +2,110 @@
 
 /*
  * AfriVPS design system — premium dark infrastructure aesthetic (Sections 12-13, 73).
- * Near-black graphite base, emerald/electric-green accent, off-white text,
- * cool-grey secondary text. Subtle grid + glow, restrained radii.
+ *
+ * Principles:
+ *  - Near-black / graphite base, graphite cards, restrained radii.
+ *  - A single premium electric-emerald accent (never neon overload).
+ *  - Off-white foreground, cool-grey secondary text.
+ *  - Subtle grid / network detailing; glow used sparingly, no glassmorphism.
+ *
+ * All token names are stable and consumed across the app — refine values here,
+ * do not rename. New tokens are purely additive.
  */
 
 @theme {
+  /* Base surfaces — layered near-black graphite. */
   --color-background: #08090b;
-  --color-foreground: #e7eaee;
+  --color-foreground: #e8ebef;
 
-  --color-surface: #0e1013;
+  --color-surface: #0d0f12;
   --color-card: #101317;
-  --color-card-foreground: #e7eaee;
+  --color-card-foreground: #e8ebef;
 
-  --color-elevated: #161a20;
+  --color-elevated: #171b21;
+  --color-overlay: #050607;
 
   --color-muted: #14171c;
   --color-muted-foreground: #8b929d;
+  --color-subtle-foreground: #6b7280;
 
-  --color-border: #1d2229;
-  --color-input: #1d2229;
+  /* Borders / inputs / focus ring. */
+  --color-border: #1c2128;
+  --color-border-strong: #262c34;
+  --color-input: #1c2128;
   --color-ring: #34d399;
 
+  /* Primary accent — premium electric emerald. */
   --color-primary: #10b981;
+  --color-primary-emphasis: #34d399;
   --color-primary-foreground: #04120c;
-  --color-primary-muted: #0c4a37;
+  --color-primary-muted: #0c3a2c;
 
   --color-accent: #34d399;
   --color-accent-foreground: #04120c;
+  --color-accent-cyan: #22d3ee;
 
-  --color-secondary: #161a20;
-  --color-secondary-foreground: #c7ccd4;
+  --color-secondary: #171b21;
+  --color-secondary-foreground: #c9ced6;
 
+  /* Status palette (Section 51). */
   --color-destructive: #f26d6d;
   --color-destructive-foreground: #1a0606;
-
   --color-warning: #f0b45e;
+  --color-warning-foreground: #1a1206;
   --color-success: #34d399;
+  --color-success-foreground: #04120c;
   --color-info: #5eb0f0;
+  --color-info-foreground: #05101a;
+
+  /* Data-visualisation palette. */
+  --color-chart-1: #34d399;
+  --color-chart-2: #22d3ee;
+  --color-chart-3: #818cf8;
+  --color-chart-4: #f0b45e;
+  --color-chart-5: #f26d6d;
 
   --radius: 0.5rem;
+  --radius-lg: 0.75rem;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+
+  /* Motion. */
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-rise: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes shimmer {
+    0% {
+      background-position: -180% 0;
+    }
+    100% {
+      background-position: 180% 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 @layer base {
@@ -53,18 +115,79 @@
 
   html {
     color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    font-synthesis-weight: none;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+  }
+
+  /* Refined heading rhythm — tight tracking, balanced wrapping. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Tabular figures everywhere numbers are meaningful. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-feature-settings: "zero", "ss01";
+  }
+
+  /* Accessible, consistent focus for keyboard users. */
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--color-background),
+      0 0 0 4px var(--color-ring);
+    border-radius: var(--radius);
   }
 
   ::selection {
     background-color: color-mix(in oklab, var(--color-accent) 30%, transparent);
     color: var(--color-foreground);
+  }
+
+  /* Subtle graphite scrollbars that match the infrastructure aesthetic. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border: 3px solid var(--color-background);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--color-muted-foreground) 50%, transparent);
   }
 }
 
@@ -77,9 +200,31 @@
     background-size: 56px 56px;
   }
 
+  .bg-grid-sm {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-border) 55%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-border) 55%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Grid that self-masks into the background — cleaner than stacking opacity. */
+  .bg-grid-fade {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-border) 65%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-border) 65%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(75% 60% at 50% 0%, #000 0%, transparent 75%);
+    mask-image: radial-gradient(75% 60% at 50% 0%, #000 0%, transparent 75%);
+  }
+
   .bg-radial-fade {
     background:
       radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--color-accent) 12%, transparent) 0%, transparent 70%);
+  }
+
+  /* Hairline top accent used on hero cards / feature panels. */
+  .border-top-accent {
+    border-top: 1px solid color-mix(in oklab, var(--color-accent) 55%, transparent);
   }
 
   .text-gradient {
@@ -89,8 +234,20 @@
     color: transparent;
   }
 
+  .text-gradient-accent {
+    background: linear-gradient(
+      120deg,
+      var(--color-accent) 0%,
+      var(--color-accent-cyan) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .glow-accent {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-accent) 25%, transparent),
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-accent) 25%, transparent),
       0 0 32px -8px color-mix(in oklab, var(--color-accent) 45%, transparent);
   }
 
@@ -98,5 +255,45 @@
     background-color: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
+  }
+
+  /* Interactive card affordance (opt-in). */
+  .card-hover {
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .card-hover:hover {
+    border-color: var(--color-border-strong);
+    background-color: color-mix(in oklab, var(--color-elevated) 40%, var(--color-card));
+  }
+
+  /* Skeleton shimmer — richer than a flat pulse. */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-elevated);
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--color-muted-foreground) 12%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer::after {
+      animation: none;
+    }
   }
 }

@@ -19,20 +19,26 @@ export function EmptyState({
   return (
     <Card
       className={cn(
-        "flex flex-col items-center justify-center border-dashed px-6 py-14 text-center",
+        "relative flex flex-col items-center justify-center overflow-hidden border-dashed px-6 py-14 text-center",
         className,
       )}
     >
-      <div className="flex size-11 items-center justify-center rounded-full border border-border bg-elevated">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-grid-fade opacity-[0.35]"
+      />
+      <div className="relative flex size-12 items-center justify-center rounded-full border border-border bg-elevated">
         <Icon className="size-5 text-muted-foreground" />
       </div>
-      <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
+      <h3 className="relative mt-4 text-sm font-semibold text-foreground">
+        {title}
+      </h3>
       {description && (
-        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+        <p className="relative mt-1.5 max-w-sm text-sm text-muted-foreground">
           {description}
         </p>
       )}
-      {action && <div className="mt-5">{action}</div>}
+      {action && <div className="relative mt-5">{action}</div>}
     </Card>
   );
 }
@@ -48,7 +54,7 @@ export function PageHeader({
 }) {
   return (
     <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-      <div>
+      <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {title}
         </h1>
@@ -56,7 +62,7 @@ export function PageHeader({
           <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
