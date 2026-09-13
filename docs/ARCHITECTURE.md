@@ -42,7 +42,11 @@ delegations and money-safe invoice totals that are genuinely available today.
 duplicate-init guard (`getApps().length ? getApp() : initializeApp(...)`) and
 connects to the Auth/Firestore/Storage emulators exactly once when
 `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`. Only `NEXT_PUBLIC_*` config reaches
-the browser.
+the browser — the whole Web config (including `apiKey`) is public by design
+(Section 62). Firebase **Analytics** is optional: `getFirebaseAnalytics()`
+initializes it lazily and only in the browser, only when a `measurementId` is
+configured, only when `isSupported()` is true, and never in emulator mode — so
+SSR and the emulator workflow are unaffected and it degrades to `null`.
 
 ## 3. Firebase Admin architecture
 

@@ -59,6 +59,85 @@ Email/Password auth, Firestore and Storage, put the Web SDK config in the
 (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) as
 server-only secrets. Set `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false`.
 
+## Connecting to the live Firebase project (`afri-vps`)
+
+The live project is `afri-vps`. `.env.example` ships its **public** Web SDK
+config as the example values, so `cp .env.example .env.local` already points the
+browser SDK at `afri-vps`. `.env.local` is gitignored and is where local secrets
+live.
+
+### 1. Public Web SDK config (safe to expose)
+
+The entire Firebase **Web** config — including `apiKey` — is public by design.
+It identifies the project and is safe in the client bundle / `NEXT_PUBLIC_*`
+(master spec Section 62). These are the `afri-vps` values:
+
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDd4EtPc4kJr_BMrn0t-RDi4R5xoWVaOjM
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=afri-vps.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=afri-vps
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=afri-vps.firebasestorage.app  # new-style bucket domain
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=188021762578
+NEXT_PUBLIC_FIREBASE_APP_ID=1:188021762578:web:4add113a7a01554d0046cb
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-JV6Q33R6L1   # optional — enables Analytics in the browser
+```
+
+`NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is optional. When set, Firebase Analytics
+initializes lazily in the browser only (never during SSR, never in emulator
+mode, and only when `isSupported()` is true). Leave it unset to disable
+analytics.
+
+### 2. Server-only Admin SDK credentials (SECRET — never commit)
+
+Server-side features (session cookies, `/api/session`, admin verification,
+custom claims, any Admin SDK Firestore/Storage access) require a **service
+account**. The private key is a secret and must **never** be committed or put in
+a `NEXT_PUBLIC_*` variable. Provide it via Cursor Secrets (or your deployment
+env / `.env.local`):
+
+```bash
+FIREBASE_PROJECT_ID=afri-vps
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@afri-vps.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+Generate these in the Firebase console: **Project settings → Service accounts →
+Generate new private key**. Paste the key with literal `\n` newlines inside
+double quotes.
+
+Without the Admin service-account key, login/session/admin/server features will
+not work against the live project, though the **public web SDK** (client auth,
+analytics) still works.
+
+### 3. Switch off the emulators
+
+Emulator mode stays the default for local dev. To target the live project set:
+
+```bash
+NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false
+```
+
+Env validation then **requires** the three Admin vars above and fails with a
+clear message listing any that are missing.
+
+### 4. Firebase console + deploy steps (project `afri-vps`)
+
+Before the live project is usable, in the Firebase console:
+
+1. **Authentication → Sign-in method:** enable **Email/Password**.
+2. **Firestore Database:** create the database in **Native mode**.
+3. **Storage:** enable Cloud Storage.
+
+Then deploy the rules and indexes from this repo to `afri-vps`:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage --project afri-vps
+```
+
+`.firebaserc` keeps `demo-afrivps` as the default (so the emulator suite and
+`pnpm test:emulated` keep working) and adds an `afri-vps` alias for the commands
+above (`--project afri-vps`).
+
 ## Firebase Emulator setup
 
 The emulators are configured in `firebase.json` (Auth `9099`, Firestore `8080`,
@@ -147,6 +226,93 @@ Designed for Vercel. Provide the `NEXT_PUBLIC_FIREBASE_*` values and the
 server-only Admin credentials as environment variables / secrets, set
 `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false`, and deploy Firestore/Storage rules
 and indexes with the Firebase CLI.
+
+## Deploy to Vercel
+
+This is a standard Next.js 16 App Router app; Vercel builds it with zero extra
+config. The repo ships a minimal [`vercel.json`](vercel.json) that pins the
+framework to `nextjs` and the serverless region to **Frankfurt (`fra1`)** — the
+closest Vercel region to Africa — plus a [`.vercelignore`](.vercelignore) so
+local-only files (`.env.local`, emulator debug logs, `.next/`, etc.) never ship.
+Build/install commands are intentionally left to Vercel's auto-detection
+(pnpm + Next.js).
+
+The **production build never needs the Admin service account**: env validation
+of the Admin credentials is lazy (`serverEnv()` runs only inside server code at
+request time), so `next build` / `vercel build` succeed without them. Privileged
+Admin SDK operations still fail clearly at **runtime** if the creds are missing —
+security is not weakened.
+
+### Recommended: Vercel Git integration (dashboard)
+
+1. In the Vercel dashboard: **Add New… → Project → Import Git Repository** and
+   pick `hackerloum/afrivps`. Vercel auto-detects Next.js + pnpm.
+2. Add the environment variables (see the checklist below) under
+   **Project Settings → Environment Variables** (set them for Production and, as
+   needed, Preview/Development).
+3. Deploy. From then on Vercel deploys automatically: pushes to `main` →
+   **Production**, pull requests → **Preview** deployments.
+
+### Environment variable checklist (Vercel → Settings → Environment Variables)
+
+Public — safe to expose (the Firebase Web config, including `apiKey`, is public
+by design):
+
+| Variable | Value / notes |
+| --- | --- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | `AIzaSyDd4EtPc4kJr_BMrn0t-RDi4R5xoWVaOjM` |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `afri-vps.firebaseapp.com` |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `afri-vps` |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `afri-vps.firebasestorage.app` |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `188021762578` |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | `1:188021762578:web:4add113a7a01554d0046cb` |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | `G-JV6Q33R6L1` (optional — enables Analytics) |
+| `NEXT_PUBLIC_USE_FIREBASE_EMULATORS` | **`false`** (emulators MUST be off in production) |
+| `NEXT_PUBLIC_APP_URL` | production URL, e.g. `https://afrivps.com` |
+| `APP_URL` | same production URL as above |
+
+Secret — server-only, from the `afri-vps` service-account JSON (never
+`NEXT_PUBLIC_*`, never committed):
+
+| Variable | Value / notes |
+| --- | --- |
+| `FIREBASE_PROJECT_ID` | `afri-vps` |
+| `FIREBASE_CLIENT_EMAIL` | `firebase-adminsdk-xxxxx@afri-vps.iam.gserviceaccount.com` |
+| `FIREBASE_PRIVATE_KEY` | the service-account private key (see key-format note below) |
+| `SESSION_COOKIE_DAYS` | optional, default `5` (max 14) |
+| `RESEND_API_KEY` | optional (email; unused in Phase 1) |
+
+**`FIREBASE_PRIVATE_KEY` format:** `lib/firebase/admin.ts` calls
+`privateKey.replace(/\\n/g, "\n")`, so it accepts **either** form:
+- paste the key with **real newlines** (multi-line) directly into the Vercel
+  field — the replace is a no-op; **or**
+- paste it as a **single line with literal `\n`** escapes (the `.env` style).
+
+Both work; do not wrap it in extra quotes in the Vercel UI.
+
+> Emulators must be **off** in production (`NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false`).
+> Without the Admin creds the site still builds and the public web SDK (client
+> auth, analytics) works, but session cookies, admin verification, custom claims,
+> and any server-side Firestore/Storage access will fail at runtime.
+
+Remember the one-time Firebase console setup for `afri-vps` (enable
+Email/Password auth, create Firestore in Native mode, enable Storage) and deploy
+rules + indexes — see
+[Connecting to the live Firebase project](#connecting-to-the-live-firebase-project-afri-vps).
+
+### Alternative: CLI / CI with a token
+
+If you prefer scripted deploys, create a `VERCEL_TOKEN` and use the Vercel CLI —
+the Git integration above is still recommended for most cases:
+
+```bash
+vercel link                       # once, associates the repo with a project
+vercel pull --yes --environment=production   # fetch project env + settings
+vercel build --prod               # produce .vercel/output using next build
+vercel deploy --prebuilt --prod   # upload the prebuilt output
+```
+
+(Env vars are still configured in the Vercel project, not committed to the repo.)
 
 ## Admin role creation & custom claims
 
