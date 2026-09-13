@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  getAnalytics,
+  isSupported,
+  type Analytics,
+} from "firebase/analytics";
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
 import {
@@ -22,6 +27,7 @@ const firebaseConfig = {
   storageBucket: publicEnv.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: publicEnv.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: publicEnv.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: publicEnv.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Emulator host/ports. Kept in sync with `firebase.json` so the Web SDK, the
@@ -81,3 +87,51 @@ export function getFirebaseClient(): {
 }
 
 export const firebaseApp = getClientApp();
+
+/**
+ * Optional Firebase Analytics.
+ *
+ * Analytics is browser-only and pointless against the emulators, so it is
+ * initialized lazily and defensively:
+ *   - never on the server (SSR / Node have no `window`);
+ *   - never in emulator mode;
+ *   - only when a `measurementId` is configured;
+ *   - only when `isSupported()` resolves true for the current environment.
+ *
+ * The single in-flight promise is memoized on `globalThis` so repeated calls
+ * (and Next.js HMR) never double-initialize. `getFirebaseAnalytics()` returns
+ * `Analytics | null` and never throws, so callers can treat analytics as a
+ * best-effort enhancement.
+ */
+const ANALYTICS_PROMISE_KEY = "__afrivps_firebase_analytics_promise__";
+
+type AnalyticsPromiseHolder = typeof globalThis & {
+  [ANALYTICS_PROMISE_KEY]?: Promise<Analytics | null>;
+};
+
+function analyticsEnabled(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    !useEmulators &&
+    Boolean(firebaseConfig.measurementId)
+  );
+}
+
+/**
+ * Resolve the Firebase Analytics instance, or `null` when analytics is not
+ * available (server, emulator mode, unsupported browser, or no measurementId).
+ * Safe to call anywhere — it degrades to `null` instead of throwing.
+ */
+export async function getFirebaseAnalytics(): Promise<Analytics | null> {
+  if (!analyticsEnabled()) return null;
+
+  const holder = globalThis as AnalyticsPromiseHolder;
+  if (holder[ANALYTICS_PROMISE_KEY]) return holder[ANALYTICS_PROMISE_KEY];
+
+  const promise = isSupported()
+    .then((supported) => (supported ? getAnalytics(getClientApp()) : null))
+    .catch(() => null);
+
+  holder[ANALYTICS_PROMISE_KEY] = promise;
+  return promise;
+}
