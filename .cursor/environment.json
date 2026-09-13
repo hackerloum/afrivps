@@ -1,0 +1,14 @@
+{
+  "$schema": "https://cursor.com/schemas/environment.json",
+  "install": "pnpm install",
+  "terminals": [
+    {
+      "name": "emulators",
+      "command": "pnpm emulators"
+    },
+    {
+      "name": "next-dev",
+      "command": "pnpm dev"
+    }
+  ]
+}

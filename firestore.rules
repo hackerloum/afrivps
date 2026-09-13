@@ -1,0 +1,200 @@
+rules_version = '2';
+
+// AfriVPS Firestore Security Rules
+//
+// Authorization model:
+//  - Customers may only read their own owned resources (customerId == uid).
+//  - Sensitive state transitions (orders, invoices, payments, services,
+//    provisioning, providers, audit logs, settings) are NEVER writable by
+//    clients. They are performed exclusively via the server (Admin SDK, which
+//    bypasses these rules).
+//  - Staff privileges come from Firebase custom claims (request.auth.token.role),
+//    never from client-provided data.
+//  - Upstream provider cost/config lives in server-only collections and is
+//    never exposed to customer-facing clients.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    function role() {
+      return isSignedIn() && ('role' in request.auth.token)
+        ? request.auth.token.role
+        : null;
+    }
+    function isStaff() {
+      return role() in ['super_admin', 'admin', 'support', 'finance'];
+    }
+    function isAdmin() {
+      return role() in ['super_admin', 'admin'];
+    }
+    function isSuperAdmin() {
+      return role() == 'super_admin';
+    }
+    function isFinance() {
+      return role() in ['super_admin', 'admin', 'finance'];
+    }
+    function ownsExisting() {
+      return isSignedIn() && resource.data.customerId == uid();
+    }
+    function ownsIncoming() {
+      return isSignedIn() && request.resource.data.customerId == uid();
+    }
+
+    // ---------- public catalog (read-only for everyone) ----------
+    // These contain ONLY customer-safe fields. Provider cost/config is stored
+    // in the server-only `providerProducts` collection, never here.
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /locations/{locationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /operatingSystems/{osId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------- user profiles ----------
+    match /users/{userId} {
+      allow read: if isSignedIn() && (uid() == userId || isStaff());
+      // A customer may create their OWN profile, but may not self-assign a
+      // privileged role.
+      allow create: if isSignedIn() && uid() == userId
+        && (!('role' in request.resource.data) || request.resource.data.role == 'customer');
+      // A customer may update their own profile but NEVER their role.
+      allow update: if isSignedIn() && uid() == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['role', 'customerReference', 'uid']) == false;
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ---------- customers metadata (server-managed) ----------
+    match /customers/{customerId} {
+      allow read: if isSignedIn() && (uid() == customerId || isStaff());
+      allow write: if false; // server-only
+    }
+
+    // ---------- staff metadata ----------
+    // Roles live in custom claims. This collection stores safe staff metadata.
+    // Only super_admin may mutate staff records (support/admin cannot escalate).
+    match /staff/{staffId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin();
+    }
+
+    // ---------- orders (customer-owned, server-written) ----------
+    match /orders/{orderId} {
+      allow read: if ownsExisting() || isStaff();
+      allow write: if false; // created/updated server-side only
+    }
+
+    // ---------- invoices ----------
+    match /invoices/{invoiceId} {
+      allow read: if ownsExisting() || isStaff();
+      allow write: if false; // customers can never flip invoice status
+    }
+
+    // ---------- payments ----------
+    match /payments/{paymentId} {
+      allow read: if ownsExisting() || isFinance();
+      allow write: if false; // all payment confirmation is server-side
+    }
+
+    // ---------- services (VPS instances) ----------
+    match /services/{serviceId} {
+      allow read: if ownsExisting() || isStaff();
+      allow write: if false; // customers can never activate their own service
+    }
+
+    // ---------- provisioning jobs (internal) ----------
+    match /provisioningJobs/{jobId} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
+    // ---------- providers (internal infra config + costs) ----------
+    // Support MUST NOT see provider costs/credentials; only admins.
+    match /providers/{providerId} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // ---------- provider products (upstream cost mapping, server-only) ----------
+    match /providerProducts/{docId} {
+      allow read, write: if false;
+    }
+
+    // ---------- payment providers config (internal) ----------
+    match /paymentProviders/{docId} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // ---------- support tickets (customer-owned) ----------
+    match /supportTickets/{ticketId} {
+      allow read: if ownsExisting() || isStaff();
+      // A customer may open their OWN ticket, but must not pre-assign staff or
+      // set a privileged lifecycle status (only staff/server may do those).
+      allow create: if ownsIncoming()
+        && !request.resource.data.keys().hasAny(['assignedStaffId'])
+        && (!('status' in request.resource.data)
+              || request.resource.data.status == 'open');
+      allow update: if isStaff();
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+          && (get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.customerId == uid() || isStaff());
+        allow create: if isSignedIn()
+          && request.resource.data.authorId == uid()
+          && (get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.customerId == uid() || isStaff());
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- notifications (customer-owned) ----------
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (resource.data.userId == uid() || isStaff());
+      // Customers may only mark their own notification as read/unread.
+      allow update: if isSignedIn() && resource.data.userId == uid()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if false;
+    }
+
+    // ---------- discount codes (internal) ----------
+    match /discountCodes/{codeId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    // ---------- audit logs (immutable, server-only) ----------
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- system settings ----------
+    match /systemSettings/{settingId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin();
+    }
+
+    // ---------- default deny ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
