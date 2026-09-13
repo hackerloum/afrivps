@@ -59,6 +59,85 @@ Email/Password auth, Firestore and Storage, put the Web SDK config in the
 (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) as
 server-only secrets. Set `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false`.
 
+## Connecting to the live Firebase project (`afri-vps`)
+
+The live project is `afri-vps`. `.env.example` ships its **public** Web SDK
+config as the example values, so `cp .env.example .env.local` already points the
+browser SDK at `afri-vps`. `.env.local` is gitignored and is where local secrets
+live.
+
+### 1. Public Web SDK config (safe to expose)
+
+The entire Firebase **Web** config — including `apiKey` — is public by design.
+It identifies the project and is safe in the client bundle / `NEXT_PUBLIC_*`
+(master spec Section 62). These are the `afri-vps` values:
+
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDd4EtPc4kJr_BMrn0t-RDi4R5xoWVaOjM
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=afri-vps.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=afri-vps
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=afri-vps.firebasestorage.app  # new-style bucket domain
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=188021762578
+NEXT_PUBLIC_FIREBASE_APP_ID=1:188021762578:web:4add113a7a01554d0046cb
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-JV6Q33R6L1   # optional — enables Analytics in the browser
+```
+
+`NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is optional. When set, Firebase Analytics
+initializes lazily in the browser only (never during SSR, never in emulator
+mode, and only when `isSupported()` is true). Leave it unset to disable
+analytics.
+
+### 2. Server-only Admin SDK credentials (SECRET — never commit)
+
+Server-side features (session cookies, `/api/session`, admin verification,
+custom claims, any Admin SDK Firestore/Storage access) require a **service
+account**. The private key is a secret and must **never** be committed or put in
+a `NEXT_PUBLIC_*` variable. Provide it via Cursor Secrets (or your deployment
+env / `.env.local`):
+
+```bash
+FIREBASE_PROJECT_ID=afri-vps
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@afri-vps.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+Generate these in the Firebase console: **Project settings → Service accounts →
+Generate new private key**. Paste the key with literal `\n` newlines inside
+double quotes.
+
+Without the Admin service-account key, login/session/admin/server features will
+not work against the live project, though the **public web SDK** (client auth,
+analytics) still works.
+
+### 3. Switch off the emulators
+
+Emulator mode stays the default for local dev. To target the live project set:
+
+```bash
+NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false
+```
+
+Env validation then **requires** the three Admin vars above and fails with a
+clear message listing any that are missing.
+
+### 4. Firebase console + deploy steps (project `afri-vps`)
+
+Before the live project is usable, in the Firebase console:
+
+1. **Authentication → Sign-in method:** enable **Email/Password**.
+2. **Firestore Database:** create the database in **Native mode**.
+3. **Storage:** enable Cloud Storage.
+
+Then deploy the rules and indexes from this repo to `afri-vps`:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage --project afri-vps
+```
+
+`.firebaserc` keeps `demo-afrivps` as the default (so the emulator suite and
+`pnpm test:emulated` keep working) and adds an `afri-vps` alias for the commands
+above (`--project afri-vps`).
+
 ## Firebase Emulator setup
 
 The emulators are configured in `firebase.json` (Auth `9099`, Firestore `8080`,
